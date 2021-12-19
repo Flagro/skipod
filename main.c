@@ -13,7 +13,7 @@ char *get_arg_value(int argc, char *argv[], const char *arg_name) {
     if (strstr(argv[i], arg_name)) {
       char *value = strchr(argv[i], '=');
       ++value;
-      char *ans = calloc(strlen(value) + 1, sizeof(char));
+      char *ans = (char *)calloc(strlen(value) + 1, sizeof(char));
       strcpy(ans, value);
       return ans;
     }
@@ -25,7 +25,7 @@ int verify_result(element_type **matrix1, element_type **matrix2,
                   element_type **result) {
   element_type **verified_result = generate_square_matrix(matrix_dim);
   serial_matrix_multiplication(matrix1, matrix2, verified_result);
-  if (!matrix_cmp(result, verified_result)) {
+  if (!matrix_equal(result, verified_result)) {
     return 0;
   }
   matrix_free(verified_result);
@@ -40,8 +40,10 @@ int main(int argc, char *argv[]) {
   const char *quiet_print = get_arg_value(argc, argv, "-quiet");
   const char *matrix_dim_str = get_arg_value(argc, argv, "-n");
   size_t matrix_dim = strtol(matrix_dim_str, NULL, 10);
+  free(matrix_dim_str);
   const char *parallel_count_str = get_arg_value(argc, argv, "-parallel");
   int parallel_count = strtol(parallel_count_str, NULL, 10);
+  free(parallel_count_str);
 
   element_type **matrix1 = generate_square_matrix(matrix_dim);
   init_random_square_matrix(matrix1, matrix_dim);
@@ -74,11 +76,10 @@ int main(int argc, char *argv[]) {
 
   results_to_json(calc_mode, parallel_count, matrix_dim, elapsed_time);
 
-  matrix_free(matrix1);
-  matrix_free(matrix2);
-  matrix_free(result);
+  matrix_free(matrix1, matrix_dim);
+  matrix_free(matrix2, matrix_dim);
+  matrix_free(result, matrix_dim);
   free(calc_mode);
   free(quiet_print);
-  free(matrix_dim);
   return 0;
 }
