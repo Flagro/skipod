@@ -33,13 +33,12 @@ int verify_result(element_type **matrix1, element_type **matrix2,
 }
 
 void results_to_json(const char *calc_mode, int parallel_count,
-                     size_t matrix_dim, time_type elapsed_time) {
+                     size_t matrix_dim, elapsed_time_type elapsed_time) {
   return;
 }
 
 int main(int argc, char *argv[]) {
   char *calc_mode = get_arg_value(argc, argv, "-mode");
-  char *quiet_print = get_arg_value(argc, argv, "-quiet");
   char *init_matrix_dim_str = get_arg_value(argc, argv, "-n");
   size_t init_matrix_dim;
   if (init_matrix_dim_str) {
@@ -64,7 +63,7 @@ int main(int argc, char *argv[]) {
   element_type **matrix2_copy = get_copy(matrix2, matrix_dim);
   
   element_type **result = generate_square_matrix(matrix_dim);
-  time_type elapsed_time;
+  elapsed_time_type elapsed_time;
 
   if (!calc_mode) {
     printf("No calculation mode were specified, exiting the program\n");
@@ -107,9 +106,6 @@ int main(int argc, char *argv[]) {
   }
   if (calc_mode) {
     free(calc_mode);
-  }
-  if (quiet_print) {
-    free(quiet_print);
   }
   return 0;
 }

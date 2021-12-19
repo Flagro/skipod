@@ -105,19 +105,19 @@ void shift_block_matrix_column_up(element_type **matrix, element_type *buff,
 
 void block_matrix_skewing_horizontal(element_type **matrix, element_type *buff,
                                      size_t matrix_dim, size_t block_size) {
-  for (size_t i = 0; i < matrix_dim; ++i) {
+  for (size_t i = 0; i < matrix_dim / block_size; ++i) {
     shift_block_matrix_row_left(matrix, buff, matrix_dim, block_size, i, i);
   }
 }
 
 void block_matrix_skewing_vertical(element_type **matrix, element_type *buff,
                                    size_t matrix_dim, size_t block_size) {
-  for (size_t i = 0; i < matrix_dim; ++i) {
+  for (size_t i = 0; i < matrix_dim / block_size; ++i) {
     shift_block_matrix_column_up(matrix, buff, matrix_dim, block_size, i, i);
   }
 }
 
-time_type serial_matrix_multiplication(element_type **matrix1,
+elapsed_time_type serial_matrix_multiplication(element_type **matrix1,
                                        element_type **matrix2,
                                        element_type **result,
                                        size_t matrix_dim) {

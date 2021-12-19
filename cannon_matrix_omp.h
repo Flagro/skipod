@@ -13,7 +13,7 @@ void add_to_result(element_type **matrix1, element_type **matrix2,
                    element_type **result_accumulator, size_t matrix_dim,
                    size_t block_size, int block_matrix_dim) {
   omp_set_num_threads(block_matrix_dim * block_matrix_dim);
-#pragma omp parallel default(none)
+#pragma omp parallel shared(matrix1, matrix2, result_accumulator)
   {
     int thread_id = omp_get_thread_num();
     size_t cur_block_matrix_row = thread_id / block_matrix_dim;
@@ -32,7 +32,7 @@ void add_to_result(element_type **matrix1, element_type **matrix2,
   }
 }
 
-time_type cannon_matrix_multiplication_omp(element_type **matrix1,
+elapsed_time_type cannon_matrix_multiplication_omp(element_type **matrix1,
                                            element_type **matrix2,
                                            element_type **result,
                                            size_t matrix_dim,
@@ -40,7 +40,7 @@ time_type cannon_matrix_multiplication_omp(element_type **matrix1,
   size_t block_size = matrix_dim / block_matrix_dim;
   element_type *buff = (element_type *)calloc(matrix_dim, sizeof(element_type));
 
-  time_type begin = omp_get_wtime();
+  elapsed_time_type begin = omp_get_wtime();
   block_matrix_skewing_horizontal(matrix1, buff, matrix_dim, block_size);
   block_matrix_skewing_vertical(matrix2, buff, matrix_dim, block_size);
   for (int i = 0; i < block_matrix_dim; ++i) {
@@ -51,7 +51,7 @@ time_type cannon_matrix_multiplication_omp(element_type **matrix1,
       shift_block_matrix_column_up(matrix2, buff, matrix_dim, block_size, j, 1);
     }
   }
-  time_type end = omp_get_wtime();
+  elapsed_time_type end = omp_get_wtime();
   free(buff);
   return begin - end;
 }
