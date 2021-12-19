@@ -22,28 +22,34 @@ char *get_arg_value(int argc, char *argv[], const char *arg_name) {
 }
 
 int verify_result(element_type **matrix1, element_type **matrix2,
-                  element_type **result) {
+                  element_type **result, size_t matrix_dim) {
   element_type **verified_result = generate_square_matrix(matrix_dim);
-  serial_matrix_multiplication(matrix1, matrix2, verified_result);
-  if (!matrix_equal(result, verified_result)) {
+  serial_matrix_multiplication(matrix1, matrix2, verified_result, matrix_dim);
+  if (!matrix_equal(result, verified_result, matrix_dim)) {
     return 0;
   }
-  matrix_free(verified_result);
+  matrix_free(verified_result, matrix_dim);
   return 1;
 }
 
 void results_to_json(const char *calc_mode, int parallel_count,
-                     size_t matrix_dim, time_type elapsed_time) {}
+                     size_t matrix_dim, time_type elapsed_time) {
+  return;
+}
 
 int main(int argc, char *argv[]) {
-  const char *calc_mode = get_arg_value(argc, argv, "-mode");
-  const char *quiet_print = get_arg_value(argc, argv, "-quiet");
-  const char *matrix_dim_str = get_arg_value(argc, argv, "-n");
-  size_t matrix_dim = strtol(matrix_dim_str, NULL, 10);
-  free(matrix_dim_str);
-  const char *parallel_count_str = get_arg_value(argc, argv, "-parallel");
-  int parallel_count = strtol(parallel_count_str, NULL, 10);
-  free(parallel_count_str);
+  char *calc_mode = get_arg_value(argc, argv, "-mode");
+  char *quiet_print = get_arg_value(argc, argv, "-quiet");
+  char *matrix_dim_str = get_arg_value(argc, argv, "-n");
+  size_t matrix_dim;
+  if (matrix_dim_str) {
+    matrix_dim = strtol(matrix_dim_str, NULL, 10);
+  }
+  char *parallel_count_str = get_arg_value(argc, argv, "-parallel");
+  int parallel_count;
+  if (parallel_count_str) {
+    parallel_count = strtol(parallel_count_str, NULL, 10);
+  }
 
   element_type **matrix1 = generate_square_matrix(matrix_dim);
   init_random_square_matrix(matrix1, matrix_dim);
@@ -51,9 +57,10 @@ int main(int argc, char *argv[]) {
   init_random_square_matrix(matrix2, matrix_dim);
   element_type **result = generate_square_matrix(matrix_dim);
   time_type elapsed_time;
+
   if (!calc_mode) {
     printf("No calculation mode were specified, exiting the program\n");
-    return 1;
+    return 0;
   } else if (!strcmp(calc_mode, "serial")) {
     elapsed_time =
         serial_matrix_multiplication(matrix1, matrix2, result, matrix_dim);
@@ -69,8 +76,12 @@ int main(int argc, char *argv[]) {
     return 1;
   }
 
-  if (strcmp(calc_mode, "serial") && !verify_result(matrix1, matrix2, result)) {
+  if (strcmp(calc_mode, "serial") &&
+      !verify_result(matrix1, matrix2, result, matrix_dim)) {
     printf("Something went wrong: the answer is incorrect\n");
+    print_matrix(matrix1, matrix_dim);
+    print_matrix(matrix2, matrix_dim);
+    print_matrix(result, matrix_dim);
     return 1;
   }
 
@@ -79,7 +90,18 @@ int main(int argc, char *argv[]) {
   matrix_free(matrix1, matrix_dim);
   matrix_free(matrix2, matrix_dim);
   matrix_free(result, matrix_dim);
-  free(calc_mode);
-  free(quiet_print);
+
+  if (parallel_count_str) {
+    free(parallel_count_str);
+  }
+  if (matrix_dim_str) {
+    free(matrix_dim_str);
+  }
+  if (calc_mode) {
+    free(calc_mode);
+  }
+  if (quiet_print) {
+    free(quiet_print);
+  }
   return 0;
 }
