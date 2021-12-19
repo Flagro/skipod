@@ -13,6 +13,11 @@ element_type **generate_square_matrix(size_t matrix_dim) {
   for (size_t i = 0; i < matrix_dim; ++i) {
     result[i] = (element_type *)calloc(matrix_dim, sizeof(element_type));
   }
+  for (size_t i = 0; i < matrix_dim; ++i) {
+    for (size_t j = 0; j < matrix_dim; ++j) {
+      result[i][j] = 0;
+    }
+  }
   return result;
 }
 
@@ -23,9 +28,19 @@ double get_random_double(double min, double max) {
 void init_random_square_matrix(element_type **matrix, size_t matrix_dim) {
   for (size_t i = 0; i < matrix_dim; ++i) {
     for (size_t j = 0; j < matrix_dim; ++j) {
-      matrix[i][j] = rand() % 5; // get_random_double(-500.0, 500.0);
+      matrix[i][j] = get_random_double(-500.0, 500.0);
     }
   }
+}
+
+element_type **get_copy(element_type **matrix, size_t matrix_dim) {
+  element_type **result = generate_square_matrix(matrix_dim);
+  for (size_t i = 0; i < matrix_dim; ++i) {
+    for (size_t j = 0; j < matrix_dim; ++j) {
+      result[i][j] = matrix[i][j];
+    }
+  }
+  return result;
 }
 
 void print_matrix(element_type **matrix, size_t matrix_dim) {
@@ -57,63 +72,48 @@ void matrix_free(element_type **matrix, size_t matrix_dim) {
   free(matrix);
 }
 
-void shift_single_row_left(element_type **matrix, size_t matrix_dim,
-                           size_t row_id) {
-  for (size_t i = 0; i + 1 < matrix_dim; ++i) {
-    element_type tmp = matrix[row_id][i];
-    matrix[row_id][i] = matrix[row_id][i + 1];
-    matrix[row_id][i + 1] = tmp;
-  }
-}
-
-void shift_single_column_up(element_type **matrix, size_t matrix_dim,
-                            size_t column_id) {
-  for (size_t i = 0; i + 1 < matrix_dim; ++i) {
-    element_type tmp = matrix[i][column_id];
-    matrix[i][column_id] = matrix[i + 1][column_id];
-    matrix[i + 1][column_id] = tmp;
-  }
-}
-
-void shift_rows_left(element_type **matrix, size_t matrix_dim) {
-  for (size_t i = 0; i < matrix_dim; ++i) {
-    shift_single_row_left(matrix, matrix_dim, i);
-  }
-}
-
-void shift_columns_up(element_type **matrix, size_t matrix_dim) {
-  for (size_t i = 0; i < matrix_dim; ++i) {
-    shift_single_column_up(matrix, matrix_dim, i);
-  }
-}
-
-void matrix_skewing_horizontal(element_type **matrix, size_t matrix_dim) {
-  for (size_t i = 0; i < matrix_dim; ++i) {
-    for (size_t j = 0; j < i; ++j) {
-      shift_single_row_left(matrix, matrix_dim, i);
+void shift_block_matrix_row_left(element_type **matrix, element_type *buff,
+                                 size_t matrix_dim, size_t block_size,
+                                 size_t shift_row_id, size_t shift_block_cnt) {
+  for (size_t i = shift_row_id * block_size;
+       i < shift_row_id * block_size + block_size; ++i) {
+    size_t shift_normal_size = shift_block_cnt * block_size;
+    for (size_t j = 0; j < matrix_dim; ++j) {
+      buff[j] = matrix[i][(j + shift_normal_size) % matrix_dim];
+    }
+    for (size_t j = 0; j < matrix_dim; ++j) {
+      matrix[i][j] = buff[j];
     }
   }
 }
 
-void matrix_skewing_vertical(element_type **matrix, size_t matrix_dim) {
-  for (size_t i = 0; i < matrix_dim; ++i) {
-    for (size_t j = 0; j < i; ++j) {
-      shift_single_column_up(matrix, matrix_dim, i);
+void shift_block_matrix_column_up(element_type **matrix, element_type *buff,
+                                  size_t matrix_dim, size_t block_size,
+                                  size_t shift_column_id,
+                                  size_t shift_block_cnt) {
+  for (size_t i = shift_column_id * block_size;
+       i < shift_column_id * block_size + block_size; ++i) {
+    size_t shift_normal_size = shift_block_cnt * block_size;
+    for (size_t j = 0; j < matrix_dim; ++j) {
+      buff[j] = matrix[(j + shift_normal_size) % matrix_dim][i];
+    }
+    for (size_t j = 0; j < matrix_dim; ++j) {
+      matrix[j][i] = buff[j];
     }
   }
 }
 
-void multiply_matrix_blocks(element_type **matrix1, element_type **matrix2,
-                            element_type **result, size_t block_dim,
-                            size_t i_start, size_t j_start) {
-  for (size_t i = 0; i < block_dim; ++i) {
-    for (size_t k = 0; k < block_dim; ++k) {
-      double r = matrix1[i_start + i][j_start + k];
-      for (size_t j = 0; j < block_dim; ++j) {
-        result[i_start + i][j_start + j] +=
-            r * matrix2[i_start + k][j_start + j];
-      }
-    }
+void block_matrix_skewing_horizontal(element_type **matrix, element_type *buff,
+                                     size_t matrix_dim, size_t block_size) {
+  for (size_t i = 0; i < matrix_dim; ++i) {
+    shift_block_matrix_row_left(matrix, buff, matrix_dim, block_size, i, i);
+  }
+}
+
+void block_matrix_skewing_vertical(element_type **matrix, element_type *buff,
+                                   size_t matrix_dim, size_t block_size) {
+  for (size_t i = 0; i < matrix_dim; ++i) {
+    shift_block_matrix_column_up(matrix, buff, matrix_dim, block_size, i, i);
   }
 }
 
@@ -132,5 +132,4 @@ time_type serial_matrix_multiplication(element_type **matrix1,
   }
   clock_t end = clock();
   return (float)(end - begin) / CLOCKS_PER_SEC;
-  ;
 }
