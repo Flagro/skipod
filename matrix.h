@@ -117,19 +117,38 @@ void block_matrix_skewing_vertical(element_type **matrix, element_type *buff,
   }
 }
 
-elapsed_time_type serial_matrix_multiplication(element_type **matrix1,
-                                       element_type **matrix2,
-                                       element_type **result,
-                                       size_t matrix_dim) {
+int verify_result(element_type **matrix1, element_type **matrix2,
+                  element_type **result, size_t matrix_dim) {
+  for (size_t i = 0; i < matrix_dim; ++i) {
+    for (size_t j = 0; j < matrix_dim; ++j) {
+      cur_result = 0;
+      for (size_t k = 0; k < matrix_dim; ++k) {
+        cur_result += matrix1[i][k] * matrix2[k][j];
+      }
+      if (cur_result != result[i][j]) {
+        return 0;
+      }
+    }
+  }
+  return 1;
+}
+
+void serial_results_to_json(const char *calc_mode, int parallel_count,
+                            size_t matrix_dim, elapsed_time_type elapsed_time) {
+  return;
+}
+
+void serial_matrix_multiplication(element_type **matrix1,
+                                  element_type **matrix2, element_type **result,
+                                  size_t matrix_dim) {
   clock_t begin = clock();
   for (size_t i = 0; i < matrix_dim; ++i) {
-    for (size_t k = 0; k < matrix_dim; ++k) {
-      double r = matrix1[i][k];
-      for (size_t j = 0; j < matrix_dim; ++j) {
-        result[i][j] += r * matrix2[k][j];
+    for (size_t j = 0; j < matrix_dim; ++j) {
+      for (size_t k = 0; k < matrix_dim; ++k) {
+        result[i][j] += matrix1[i][k] * matrix2[k][j];
       }
     }
   }
   clock_t end = clock();
-  return (float)(end - begin) / CLOCKS_PER_SEC;
+  serial_results_to_json("serial", 1, matrix_dim, end - begin);
 }

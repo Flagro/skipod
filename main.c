@@ -21,22 +21,6 @@ char *get_arg_value(int argc, char *argv[], const char *arg_name) {
   return NULL;
 }
 
-int verify_result(element_type **matrix1, element_type **matrix2,
-                  element_type **result, size_t matrix_dim) {
-  element_type **verified_result = generate_square_matrix(matrix_dim);
-  serial_matrix_multiplication(matrix1, matrix2, verified_result, matrix_dim);
-  if (!matrix_equal(result, verified_result, matrix_dim)) {
-    return 0;
-  }
-  matrix_free(verified_result, matrix_dim);
-  return 1;
-}
-
-void results_to_json(const char *calc_mode, int parallel_count,
-                     size_t matrix_dim, elapsed_time_type elapsed_time) {
-  return;
-}
-
 int main(int argc, char *argv[]) {
   char *calc_mode = get_arg_value(argc, argv, "-mode");
   char *init_matrix_dim_str = get_arg_value(argc, argv, "-n");
@@ -61,7 +45,7 @@ int main(int argc, char *argv[]) {
   element_type **matrix2 = generate_square_matrix(matrix_dim);
   init_random_square_matrix(matrix2, init_matrix_dim);
   element_type **matrix2_copy = get_copy(matrix2, matrix_dim);
-  
+
   element_type **result = generate_square_matrix(matrix_dim);
   elapsed_time_type elapsed_time;
 
@@ -69,30 +53,18 @@ int main(int argc, char *argv[]) {
     printf("No calculation mode were specified, exiting the program\n");
     return 0;
   } else if (!strcmp(calc_mode, "serial")) {
-    elapsed_time =
-        serial_matrix_multiplication(matrix1, matrix2, result, matrix_dim);
+    serial_matrix_multiplication(matrix1, matrix2, result, matrix_dim);
   } else if (!strcmp(calc_mode, "omp")) {
-    elapsed_time = cannon_matrix_multiplication_omp(matrix1, matrix2, result,
-                                                    matrix_dim, block_matrix_dim);
+    cannon_matrix_multiplication_omp(matrix1, matrix2, result, matrix_dim,
+                                     block_matrix_dim);
   } else if (!strcmp(calc_mode, "mpi")) {
-    elapsed_time = cannon_matrix_multiplication_mpi(matrix1, matrix2, result,
-                                                    matrix_dim, block_matrix_dim);
+    cannon_matrix_multiplication_mpi(matrix1, matrix2, result, matrix_dim,
+                                     block_matrix_dim);
   } else {
     printf("Invalid passed mode argument \"%s\", exiting the program\n",
            calc_mode);
     return 1;
   }
-
-  if (strcmp(calc_mode, "serial") &&
-      !verify_result(matrix1_copy, matrix2_copy, result, init_matrix_dim)) {
-    printf("Something went wrong: the answer is incorrect\n");
-    print_matrix(matrix1_copy, matrix_dim);
-    print_matrix(matrix2_copy, matrix_dim);
-    print_matrix(result, matrix_dim);
-    return 1;
-  }
-
-  results_to_json(calc_mode, parallel_count, init_matrix_dim, elapsed_time);
 
   matrix_free(matrix1, matrix_dim);
   matrix_free(matrix2, matrix_dim);
